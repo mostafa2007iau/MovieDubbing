@@ -60,7 +60,59 @@ button:hover {
 .result-container {
     margin-top: 2rem;
     padding: 1rem;
-    border: 1px dashed #ccc;
-    border-radius: 4px;
+    border-top: 1px solid #eee;
+    text-align: right;
     display: none; /* مخفی تا زمانی که نتیجه‌ای وجود داشته باشد */
+}
+
+.result-container h3 {
+    color: #1a73e8;
+    text-align: center;
+}
+
+.video-player {
+    margin: 1.5rem 0;
+}
+
+.download-links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.download-link {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background-color: #28a745;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.download-link:hover {
+    background-color: #218838;
+}
+
+.transcripts h4 {
+    margin-top: 1rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+.transcript-box {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    white-space: pre-wrap; /* برای حفظ فاصله‌ها و خطوط جدید */
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.error {
+    color: #dc3545;
+    font-weight: bold;
 }
