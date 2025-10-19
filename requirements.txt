@@ -5,5 +5,3 @@ openai-whisper
 translators
 gTTS
 Werkzeug==2.3.7
-playwright
-pytest-playwright
