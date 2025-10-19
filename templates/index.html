@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ابزار دوبله ویدیو</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>ابزار دوبله ویدیو</h1>
+        <p>آدرس ویدیوی یوتیوب (یا سایت مشابه) را وارد کنید و زبان مقصد را برای دوبله انتخاب نمایید.</p>
+        <form id="process-form">
+            <input type="url" id="video-url" placeholder="آدرس ویدیو را اینجا وارد کنید..." required>
+            <select id="target-lang">
+                <option value="fa">فارسی</option>
+                <option value="en">انگلیسی</option>
+                <option value="ar">عربی</option>
+                <option value="tr">ترکی</option>
+            </select>
+            <button type="submit">شروع پردازش</button>
+        </form>
+        <div class="result-container" id="result">
+            <!-- نتایج پردازش در اینجا نمایش داده خواهد شد -->
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
