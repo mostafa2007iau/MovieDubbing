@@ -1,0 +1,118 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 90%;
+    max-width: 500px;
+}
+
+h1 {
+    font-size: 1.8rem;
+    color: #1a73e8;
+}
+
+p {
+    margin-bottom: 1.5rem;
+    color: #555;
+}
+
+#process-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#video-url, #target-lang {
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+button {
+    padding: 0.8rem;
+    background-color: #1a73e8;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #1558b8;
+}
+
+.result-container {
+    margin-top: 2rem;
+    padding: 1rem;
+    border-top: 1px solid #eee;
+    text-align: right;
+    display: none; /* مخفی تا زمانی که نتیجه‌ای وجود داشته باشد */
+}
+
+.result-container h3 {
+    color: #1a73e8;
+    text-align: center;
+}
+
+.video-player {
+    margin: 1.5rem 0;
+}
+
+.download-links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.download-link {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background-color: #28a745;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.download-link:hover {
+    background-color: #218838;
+}
+
+.transcripts h4 {
+    margin-top: 1rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+.transcript-box {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    white-space: pre-wrap; /* برای حفظ فاصله‌ها و خطوط جدید */
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.error {
+    color: #dc3545;
+    font-weight: bold;
+}
