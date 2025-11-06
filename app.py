@@ -26,7 +26,8 @@ tasks = {}
 tasks_lock = threading.Lock()
 WHISPER_MODEL = whisper.load_model("base")
 
-# --- Helper Functions ---
+# --- Helper Functions (Refactored for Professional Error Handling) ---
+
 def generate_filename(extension):
     return f"{uuid.uuid4()}.{extension}"
 
@@ -34,9 +35,10 @@ def cleanup_temp_files(*files):
     for file in files:
         if file and os.path.exists(file):
             try: os.remove(file)
-            except OSError as e: print(f"Error deleting file {file}: {e}")
+            except OSError as e: print(f"Error deleting temporary file {file}: {e}")
 
 def download_audio(video_url):
+    """Downloads audio and raises an exception on any error."""
     try:
         audio_filename = generate_filename("mp3")
         audio_path = os.path.join(TEMP_DIR, audio_filename)
@@ -49,65 +51,73 @@ def download_audio(video_url):
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([video_url])
         if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
-            raise RuntimeError("Audio file was not created or is empty after download.")
+            raise RuntimeError("File not created or empty after download.")
         return audio_path
     except Exception as e:
-        print(f"Error in download_audio:\n{traceback.format_exc()}")
-        raise e
+        # Re-raise with a more informative message to be caught by the main handler
+        raise RuntimeError(f"Failed in download_audio: {e}") from e
 
 def transcribe_audio(audio_path):
+    """Transcribes audio and raises an exception on any error."""
     try:
+        if not audio_path or not os.path.exists(audio_path):
+            raise FileNotFoundError("Audio file not found for transcription.")
         result = WHISPER_MODEL.transcribe(audio_path)
-        return result['language'], result['text']
+        return result.get('language'), result.get('text')
     except Exception as e:
-        print(f"Error in transcribe_audio:\n{traceback.format_exc()}")
-        raise e
+        raise RuntimeError(f"Failed in transcribe_audio (Whisper): {e}") from e
 
 def translate_text(text, source_lang, target_lang):
-    try: return ts.translate_text(text, from_language=source_lang, to_language=target_lang)
-    except Exception as e: print(f"Error in translate_text:\n{traceback.format_exc()}"); raise e
+    """Translates text and raises an exception on any error."""
+    try:
+        if not text: return "" # Return empty if there's nothing to translate
+        return ts.translate_text(text, from_language=source_lang, to_language=target_lang)
+    except Exception as e:
+        raise RuntimeError(f"Failed in translate_text: {e}") from e
 
 def synthesize_speech(text, lang):
+    """Synthesizes speech and raises an exception on any error."""
     try:
         audio_filename = generate_filename("mp3")
         audio_path = os.path.join(TEMP_DIR, audio_filename)
         tts = gTTS(text=text, lang=lang); tts.save(audio_path)
         return audio_path
-    except Exception as e: print(f"Error in synthesize_speech:\n{traceback.format_exc()}"); raise e
+    except Exception as e:
+        raise RuntimeError(f"Failed in synthesize_speech (gTTS): {e}") from e
 
 def combine_video_and_audio(video_url, dubbed_audio_path):
+    """Combines video/audio and raises an exception on any error."""
     temp_video_path = None
     try:
         video_filename, temp_video_filename = generate_filename("mp4"), generate_filename("mp4")
         video_path = os.path.join(DOWNLOAD_DIR, video_filename)
         temp_video_path = os.path.join(TEMP_DIR, temp_video_filename)
         ydl_opts = {
-            'format': 'bestvideo[ext=mp4]',
-            'outtmpl': temp_video_path,
-            'noplaylist': True,
+            'format': 'bestvideo[ext=mp4]', 'outtmpl': temp_video_path, 'noplaylist': True,
             'http_headers': {'User-Agent': YDL_USER_AGENT}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([video_url])
         video_input = ffmpeg.input(temp_video_path); audio_input = ffmpeg.input(dubbed_audio_path)
-        ffmpeg.output(video_input.video, audio_input.audio, video_path, vcodec='copy', acodec='aac').run(overwrite_output=True)
+        ffmpeg.output(video_input.video, audio_input.audio, video_path, vcodec='copy', acodec='aac').run(overwrite_output=True, quiet=True)
         return video_path
-    except Exception as e: print(f"Error in combine_video_and_audio:\n{traceback.format_exc()}"); return None
+    except Exception as e:
+        raise RuntimeError(f"Failed in combine_video_and_audio (ffmpeg): {e}") from e
     finally:
-        if temp_video_path and os.path.exists(temp_video_path): os.remove(temp_video_path)
+        cleanup_temp_files(temp_video_path)
 
 def download_original_video(video_url):
+    """Downloads original video and raises an exception on any error."""
     try:
         video_filename = generate_filename("mp4")
         video_path = os.path.join(DOWNLOAD_DIR, video_filename)
         ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'outtmpl': video_path,
-            'noplaylist': True,
-            'http_headers': {'User-Agent': YDL_USER_AGENT}
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', 'outtmpl': video_path,
+            'noplaylist': True, 'http_headers': {'User-Agent': YDL_USER_AGENT}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([video_url])
         return video_path
-    except Exception as e: print(f"Error in download_original_video:\n{traceback.format_exc()}"); return None
+    except Exception as e:
+        raise RuntimeError(f"Failed in download_original_video: {e}") from e
 
 # --- Background Task Management ---
 def cleanup_old_tasks():
@@ -117,7 +127,7 @@ def cleanup_old_tasks():
             expiration_time = datetime.now() - timedelta(hours=TASK_EXPIRATION_HOURS)
             tasks_to_delete = []
             for task_id, data in tasks.items():
-                if data.get('timestamp', datetime.min) < expiration_time:
+                if data.get('timestamp', datetime.now()) < expiration_time:
                     tasks_to_delete.append(task_id)
                     if data.get('status') == 'success' and 'result' in data:
                         result = data['result']
@@ -139,23 +149,22 @@ def process_task(task_id, video_url, target_lang):
 
     original_audio_path = dubbed_audio_path = None
     try:
-        update_status('processing', 'در حال دانلود صدا...')
+        update_status('processing', '۱/۶: در حال دانلود صدا...')
         original_audio_path = download_audio(video_url)
 
-        update_status('processing', 'در حال تشخیص گفتار...')
+        update_status('processing', '۲/۶: در حال تشخیص گفتار...')
         source_lang, original_text = transcribe_audio(original_audio_path)
 
-        update_status('processing', 'در حال ترجمه متن...')
+        update_status('processing', '۳/۶: در حال ترجمه متن...')
         translated_text = translate_text(original_text, source_lang, target_lang)
 
-        update_status('processing', 'در حال تولید صدای دوبله...')
+        update_status('processing', '۴/۶: در حال تولید صدای دوبله...')
         dubbed_audio_path = synthesize_speech(translated_text, target_lang)
 
-        update_status('processing', 'در حال ترکیب ویدیو و صدا...')
+        update_status('processing', '۵/۶: در حال ترکیب ویدیو و صدا...')
         dubbed_video_path = combine_video_and_audio(video_url, dubbed_audio_path)
-        if not dubbed_video_path: raise Exception('ترکیب ویدیو با صدای دوبله با مشکل مواجه شد.')
 
-        update_status('processing', 'در حال دانلود ویدیوی اصلی...')
+        update_status('processing', '۶/۶: در حال آماده‌سازی نسخه اصلی...')
         original_video_path = download_original_video(video_url)
 
         final_result = {
@@ -167,9 +176,12 @@ def process_task(task_id, video_url, target_lang):
         update_status('success', 'پردازش با موفقیت انجام شد!', final_result)
 
     except Exception as e:
-        error_details = traceback.format_exc()
-        print(f"Task {task_id} failed:\n{error_details}")
-        update_status('error', f"خطای داخلی سرور: {e}")
+        # Log the full technical error to the console for debugging
+        print(f"--- Task {task_id} failed ---")
+        traceback.print_exc()
+        print("--------------------")
+        # Send the specific, technical error message to the user
+        update_status('error', f"خطا در پردازش: {e}")
     finally:
         cleanup_temp_files(original_audio_path, dubbed_audio_path)
 
